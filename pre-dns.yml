@@ -1,0 +1,36 @@
+---
+# playbook file for pre-dns
+
+- hosts: localhost
+  connection: local
+  gather_facts: no
+  tasks:
+  - set_fact:
+      target_group_name: "{% if groups['new_nodes'] is defined and ( groups['new_nodes'] | length>0 ) %}new_nodes{% else %}nodes{% endif %}"
+  - add_host:
+      name: "{{ item }}"
+      groups: target_group
+    with_items: "{% if groups['new_nodes'] is defined and ( groups['new_nodes'] | length>0 ) %}{{ groups['new_nodes'] }}{% else %}{{ groups['nodes'] }}{% endif %}"
+    changed_when: false
+  - name: DEBUG:target_group name
+    debug:
+      msg: "{{ target_group_name }}"
+  - name: DEBUG:target_group host
+    debug:
+      msg: "{{ groups['target_group'] }}"
+
+- hosts: target_group
+  connection: ssh
+  gather_facts: no
+  become: true
+  pre_tasks:
+  - name: Set network_dev_name
+    set_fact:
+      network_dev_name: eth0
+    when: network_dev_name is not defined
+  - name: Set network_dns_server
+    set_fact:
+      network_dns_server: {'1.1.1.1','8.8.8.8'}
+    when: network_dns_server is not defined
+  roles:
+  - role: pre-dns 

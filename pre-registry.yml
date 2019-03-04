@@ -1,0 +1,48 @@
+---
+# playbook file for pre-registry
+
+- hosts: localhost
+  connection: local
+  gather_facts: no
+  tasks:
+  - set_fact:
+      target_group_name: "{% if groups['new_nodes'] is defined and ( groups['new_nodes'] | length>0 ) %}new_nodes{% else %}nodes{% endif %}"
+  - add_host:
+      name: "{{ item }}"
+      groups: target_group
+    with_items: "{% if groups['new_nodes'] is defined and ( groups['new_nodes'] | length>0 ) %}{{ groups['new_nodes'] }}{% else %}{{ groups['nodes'] }}{% endif %}"
+    changed_when: false
+  - name: DEBUG:target_group name
+    debug:
+      msg: "{{ target_group_name }}"
+  - name: DEBUG:target_group host
+    debug:
+      msg: "{{ groups['target_group'] }}"
+
+- hosts: target_group
+  connection: ssh
+  gather_facts: no
+  become: true
+  pre_tasks:
+  - name: Set docker_credential_path
+    set_fact:
+      docker_credential_path: /root/.docker/config.json
+    when: docker_credential_path is not defined
+  - name: Set registry_cert value
+    set_fact:
+      registry_cert: registry.example.com.crt
+    when: registry_cert is not defined
+  - name: Set registry_url value
+    set_fact:
+      registry_url: registry.example.com
+    when: registry_url is not defined
+  - name: Set registry_username value
+    set_fact:
+      registry_username: admin
+    when: registry_username is not defined
+  - name: Set registry_password value
+    set_fact:
+      registry_password: redhat
+    when: registry_password is not defined
+  roles:
+  - role: pre-registry 

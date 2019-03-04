@@ -1,0 +1,46 @@
+---
+# tasks file for pre-selinux
+
+- name: Print selinux_conf_path value
+  debug:
+    var: selinux_conf_path
+ 
+- name: Check if libselinux-python is exists
+  yum:
+    name: libselinux-python
+    state: installed
+
+- name: Set SELinux to 'Enforcing'
+  selinux:
+    conf: "{{ selinux_conf_path | default('/etc/selinux/config') }}"
+    policy: targeted
+    state: enforcing
+  register: selinux_settings
+
+- name: 'Require SSH port (default: 22)'
+  set_fact:
+    ssh_port: "{{ hostvars[inventory_hostname].ansible_port if 'ansible_port' in hostvars[inventory_hostname] else 22 }}"
+  when: selinux_settings.reboot_required
+
+- name: Reboot machines for setting SELinux Enforcing
+  shell: "sleep 2 && reboot"
+  async: 1
+  poll: 0
+  when: selinux_settings.reboot_required
+
+- name: Wait for machines down
+  local_action: wait_for host={{ inventory_hostname }} port={{ ssh_port }} state=stopped
+  when: selinux_settings.reboot_required
+
+- name: Wait for machines up
+  local_action: wait_for host={{ inventory_hostname }} port={{ ssh_port }} state=started
+  when: selinux_settings.reboot_required
+
+- name: Gather facts for ansible_selinux
+  setup:
+    filter: ansible_selinux
+
+- name: Print ansible_selinux value
+  debug:
+    var: ansible_selinux
+

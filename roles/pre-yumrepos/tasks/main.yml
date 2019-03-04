@@ -1,0 +1,40 @@
+---
+# tasks file for pre-yumrepos
+
+- name: Print repos_file_name & repos_url_path value
+  debug:
+    var: "{{ item }}"
+  with_items:
+    - repos_file_name
+    - repos_url_path
+
+- name: Add OpenShift repositories into the same repos file
+  yum_repository:
+    name: "{{ item }}"
+    description: "{{ item }}"
+    file: "{{ repos_file_name | default('ocp') }}"
+    baseurl: "{{ repos_url_path | default('file:///opt/repos/') }}{{ item }}"
+    enabled: yes
+    gpgcheck: no
+  with_items:
+    - 'rhel-7-server-ansible-2.6-rpms'
+    - 'rhel-7-server-extras-rpms'
+    - 'rhel-7-server-ose-3.11-rpms'
+    - 'rhel-7-server-rpms'
+
+- name: Clean yum repo
+  shell: |
+    yum clean all
+  ignore_errors: true
+  changed_when: false
+
+- name: Test yum repolist all
+  shell: |
+    yum repolist all
+  register: yum_repolist_all_results
+  ignore_errors: true
+  changed_when: false
+
+- name: Print yum repolist all
+  debug:
+    msg: "{{ yum_repolist_all_results.stdout_lines }}"

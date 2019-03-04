@@ -1,0 +1,11 @@
+---
+
+- import_playbook: pre-dns.yml
+
+- import_playbook: pre-yumrepos.yml
+
+- import_playbook: pre-registry.yml
+
+- import_playbook: pre-sysctl.yml
+
+- import_playbook: pre-selinux.yml

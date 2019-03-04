@@ -1,0 +1,32 @@
+---
+# playbook file for pre-selinux
+
+- hosts: localhost
+  connection: local
+  gather_facts: no
+  tasks:
+  - set_fact:
+      target_group_name: "{% if groups['new_nodes'] is defined and ( groups['new_nodes'] | length>0 ) %}new_nodes{% else %}nodes{% endif %}"
+  - add_host:
+      name: "{{ item }}"
+      groups: target_group
+    with_items: "{% if groups['new_nodes'] is defined and ( groups['new_nodes'] | length>0 ) %}{{ groups['new_nodes'] }}{% else %}{{ groups['nodes'] }}{% endif %}"
+    changed_when: false
+  - name: DEBUG:target_group name
+    debug:
+      msg: "{{ target_group_name }}"
+  - name: DEBUG:target_group host
+    debug:
+      msg: "{{ groups['target_group'] }}"
+
+- hosts: target_group
+  connection: ssh
+  gather_facts: yes
+  become: true
+  pre_tasks:
+  - name: Set selinux_conf_path
+    set_fact:
+      selinux_conf_path: /etc/selinux/config
+    when: selinux_conf_path is not defined
+  roles:
+  - role: pre-selinux

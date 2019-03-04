@@ -1,0 +1,78 @@
+---
+# tasks file for pre-registry
+
+- name: Ensure install docker service
+  yum:
+    name: docker
+    state: installed
+  delegate_to: localhost
+
+- name: Startup docker service
+  service:
+    name: docker
+    state: started
+  delegate_to: localhost
+
+- name: Creat folder for /etc/docker/certs.d/{{ registry_url }}
+  file:
+    path: /etc/docker/certs.d/{{registry_url}}
+    state: directory
+    mode: 0755
+  delegate_to: localhost
+
+- name: Copy {{ registry_cert }} file to /etc/docker/certs.d/{{ registry_url }}
+  copy:
+    src: "{{ registry_cert }}"
+    dest: /etc/docker/certs.d/{{ registry_url }}
+  delegate_to: localhost
+
+- name: Restart docker service
+  service:
+    name: docker
+    state: restarted
+  delegate_to: localhost
+
+- name: Docker login to {{ registry_url }}
+  shell: |
+    docker login {{ registry_url }} --username {{ registry_username }} --password {{ registry_password }}
+  delegate_to: localhost
+
+- name: Creat folder for /root/.docker/
+  file:
+    path: /root/.docker/
+    state: directory
+    owner: root
+    mode: 'u=rwx,g=,o='
+
+- name: Copy local {{ docker_credential_path }} to remote /root/.docker/config.json
+  copy:
+    src: "{{ docker_credential_path }}"
+    dest: /root/.docker/
+    owner: root
+    mode: 'u=rw,g=,o=' 
+
+- name: Creat folder for /var/lib/origin/.docker/
+  file:
+    path: /var/lib/origin/.docker/
+    state: directory
+    owner: root
+    mode: 'u=rwx,g=rx,o=rx'
+
+- name: Copy local {{ docker_credential_path }} to remote /var/lib/origin/.docker/
+  copy:
+    src: "{{ docker_credential_path }}"
+    dest: /var/lib/origin/.docker/
+    owner: root
+    mode: 'u=rw,g=,o='
+
+- name: Creat folder for /etc/docker/certs.d/{{ registry_url }}
+  file:
+    path: /etc/docker/certs.d/{{ registry_url }}
+    state: directory
+    owner: root
+    mode: 'u=rwx,g=rx,o=rx'
+
+- name: Copy {{ registry_cert }} file to /etc/docker/certs.d/{{ registry_url }}
+  copy:
+    src: "{{ registry_cert }}"
+    dest: /etc/docker/certs.d/{{ registry_url }}

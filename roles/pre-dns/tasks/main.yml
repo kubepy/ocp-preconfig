@@ -1,0 +1,33 @@
+---
+# tasks file for pre-dns
+
+- name: Print network_dev_name value
+  debug:
+    var: "{{ item }}"
+  with_items:
+    - network_dev_name
+    - network_dns_server
+
+- name: Ensure NetworkManager is Enabled and Started
+  service:
+    name: NetworkManager
+    enabled: yes
+    state: started
+
+- name: Cleanup Upstream DNS Server
+  shell: |
+    nmcli connection modify "{{ network_dev_name }}" ipv4.dns ""
+  ignore_errors: true
+  when: network_dev_name is defined
+
+- name: Setup Upstream DNS Server
+  shell: |
+    nmcli connection modify "{{ network_dev_name }}" +ipv4.dns "{{ item }}"
+  with_items: "{{ network_dns_server }}"
+  when: network_dev_name is defined and network_dns_server is defined
+
+- name: Refresh "{{ network_dev_name }}" networking
+  shell: |
+    nmcli connection up "{{ network_dev_name }}"
+  ignore_errors: true
+  when: network_dev_name is defined

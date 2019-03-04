@@ -1,0 +1,26 @@
+---
+# tasks file for pre-sysctl
+- name: Print sysctl_file_path value
+  debug: 
+    var: sysctl_file_path
+
+- name: Check if ip_forward value exists
+  shell: |
+    cat "{{ sysctl_file_path | default('/etc/sysctl.conf') }}"
+  register: net_ipv4_ip_forward_results
+  ignore_errors: true
+  changed_when: false
+  failed_when: false
+
+- name: Set ip_forward to '1'
+  sysctl:
+    name: "{{ item }}"
+    value: 1
+    sysctl_file: "{{ sysctl_file_path | default('/etc/sysctl.conf') }}"
+    reload: yes
+  when: net_ipv4_ip_forward_results.stdout.find('{{ item }}') != -1
+  with_items:
+    - net.ipv4.ip_forward
+    - net.ipv4.conf.all.forwarding
+    - net.ipv4.conf.default.forwarding
+
