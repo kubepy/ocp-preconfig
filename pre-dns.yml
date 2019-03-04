@@ -26,7 +26,7 @@
   pre_tasks:
   - name: Set network_dev_name
     set_fact:
-      network_dev_name: eth0
+      network_dev_name: ens224
     when: network_dev_name is not defined
   - name: Set network_dns_server
     set_fact:
