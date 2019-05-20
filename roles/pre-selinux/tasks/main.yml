@@ -22,6 +22,12 @@
     ssh_port: "{{ hostvars[inventory_hostname].ansible_port if 'ansible_port' in hostvars[inventory_hostname] else 22 }}"
   when: selinux_settings.reboot_required
 
+- name: Relabel SELinux contexts on reboot
+  file:
+    dest: /.autorelabel
+    state: touch
+  when: selinux_settings.reboot_required
+
 - name: Reboot machines for setting SELinux Enforcing
   shell: "sleep 2 && reboot"
   async: 1
