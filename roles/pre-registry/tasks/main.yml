@@ -2,40 +2,46 @@
 # tasks file for pre-registry
 
 - name: Ensure install docker service
-  yum:
+  local_action:
+    module: yum
     name: docker
     state: installed
-  delegate_to: localhost
+  ignore_errors: yes
 
 - name: Startup docker service
-  service:
+  local_action:
+    module: service
     name: docker
     state: started
-  delegate_to: localhost
+  ignore_errors: yes
 
 - name: Creat folder for /etc/docker/certs.d/{{ registry_url }}
-  file:
+  local_action:
+    module: file
     path: /etc/docker/certs.d/{{registry_url}}
     state: directory
     mode: 0755
-  delegate_to: localhost
+  ignore_errors: yes
 
 - name: Copy {{ registry_cert }} file to /etc/docker/certs.d/{{ registry_url }}
-  copy:
+  local_action:
+    module: copy
     src: "{{ registry_cert }}"
     dest: /etc/docker/certs.d/{{ registry_url }}
-  delegate_to: localhost
+  ignore_errors: yes
 
 - name: Restart docker service
-  service:
+  local_action:
+    module: service
     name: docker
     state: restarted
-  delegate_to: localhost
+  ignore_errors: yes
 
 - name: Docker login to {{ registry_url }}
-  shell: |
-    docker login {{ registry_url }} --username {{ registry_username }} --password {{ registry_password }}
-  delegate_to: localhost
+  local_action:
+    module: shell
+    _raw_params: docker login {{ registry_url }} --username {{ registry_username }} --password {{ registry_password }}
+  ignore_errors: yes
 
 - name: Creat folder for /root/.docker/
   file:
